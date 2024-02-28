@@ -2,7 +2,6 @@ import java.util.*;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.lang.Math;
-import java.util.stream.*;
 public class Dataset {
 
     private String filepath;
@@ -11,6 +10,8 @@ public class Dataset {
     private List<HashMap<String, String>> loadedDataset;
     private List<HashMap<String, String>> currentDataset;
     private List<String> datasetHeaders;
+
+    private boolean canGetTree = false;
 
     private static int sum(List<Integer> l){
         int total = 0;
@@ -31,17 +32,14 @@ public class Dataset {
     public double getEntropyFromDataset(String attribute, List<HashMap<String, String>> dataset){
         HashMap<String, Integer> counts = new HashMap<>();
         int total = 0;
-        for (int i = 0; i < dataset.size(); i++){
-            HashMap<String, String> row = dataset.get(i);
+        for (HashMap<String, String> row : dataset) {
             String rowValue = row.get(attribute);
-            if (counts.containsKey(rowValue)){
+            if (counts.containsKey(rowValue)) {
                 counts.put(rowValue, counts.get(rowValue) + 1);
-                total += 1;
-            }
-            else{
+            } else {
                 counts.put(rowValue, 1);
-                total += 1;
             }
+            total += 1;
         }
         double entropy = 0.0;
         for (String key : counts.keySet()){
@@ -93,7 +91,7 @@ public class Dataset {
 
     private List<String> getAttributesFromDataset(List<HashMap<String, String>> dataset){
         HashMap<String, String> firstRow = dataset.get(0);
-        List<String> attributes = new ArrayList<String>(firstRow.keySet());
+        List<String> attributes = new ArrayList<>(firstRow.keySet());
         attributes.remove(this.targetClass);
         return attributes;
     }
@@ -189,7 +187,7 @@ public class Dataset {
         List<HashMap<String, String>> newDataset = new ArrayList<>();
         for (HashMap<String, String> row : dataset){
             if (row.get(attribute).equals(attributeValue)){
-                HashMap<String, String> newRow = new HashMap<String, String>(row);
+                HashMap<String, String> newRow = new HashMap<>(row);
                 newDataset.add(newRow);
             }
         }
@@ -202,8 +200,12 @@ public class Dataset {
 
     public Node getTreeRootNode(){
         Node rootNode = new Node(this.targetClass);
-        getChildNodes(rootNode, this.currentDataset);
 
+        if (this.canGetTree){
+            getChildNodes(rootNode, this.currentDataset);
+        }else{
+            System.out.println("Can't get Tree Root Node - No File Loaded!");
+        }
         return rootNode;
     }
 
@@ -242,10 +244,19 @@ public class Dataset {
     }
 
     public Dataset(String filepath){
+        this.loadFile(filepath);
+    }
+
+    public Dataset(){
+        this.canGetTree = false;
+    }
+
+    public void loadFile(String filepath){
         this.filepath = filepath;
         this.getHeaders();
         this.loadDataset();
         this.currentDataset = copyDataset(this.loadedDataset);
+        this.canGetTree = true;
     }
 
     public List<HashMap<String, String>> getDataset(){
